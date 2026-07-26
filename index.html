@@ -501,11 +501,22 @@
 
   var cur=-1,playing=false,ticker=null;
   var A=new Audio();A.preload="metadata";
-  function srcOf(t){var a=album();return (a.dir?a.dir+"/":"")+encodeURIComponent(t.f);}
-  function loadTrack(play){
+  var curSrc=-1,tryIdx=0,tryList=[];
+  function srcList(t){
+    var a=album(),dir=a.dir?a.dir+"/":"",f=t.f,forms=[],out=[],seen={};
+    if(f.normalize){forms.push(f.normalize("NFD"));forms.push(f.normalize("NFC"));}
+    forms.push(f);
+    for(var i=0;i<forms.length;i++){
+      if(!seen[forms[i]]){seen[forms[i]]=1;out.push(dir+encodeURIComponent(forms[i]));}
+    }
+    return out;
+  }
+  function play(){var p=A.play();if(p&&p.catch)p.catch(function(){});}
+  function loadTrack(go){
     var t=TRACKS[cur];if(!t)return;
-    A.src=srcOf(t);
-    if(play){var p=A.play();if(p&&p.catch)p.catch(function(){});}
+    tryList=srcList(t);tryIdx=0;curSrc=cur;
+    A.src=tryList[0];
+    if(go)play();
   }
 
   function renderList(){
@@ -569,9 +580,8 @@
 
   function start(){
     if(cur<0)cur=0;
-    var want=srcOf(TRACKS[cur]);
-    if(!A.src||A.src.slice(-want.length)!==want){loadTrack(true);}
-    else{var p=A.play();if(p&&p.catch)p.catch(function(){});}
+    if(curSrc!==cur||!A.src){loadTrack(true);}
+    else{play();}
     playing=true;
     renderList();renderPlayer();
     if(!ticker)ticker=setInterval(tick,1000);
@@ -590,6 +600,11 @@
     if(cur<TRACKS.length-1){cur=cur+1;start();}else{stop();}
   });
   A.addEventListener("error",function(){
+    if(tryIdx<tryList.length-1){
+      tryIdx=tryIdx+1;A.src=tryList[tryIdx];
+      if(playing)play();
+      return;
+    }
     playing=false;
     if(ticker){clearInterval(ticker);ticker=null;}
     $("pnow").textContent="Error";
