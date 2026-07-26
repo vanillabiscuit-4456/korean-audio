@@ -27,6 +27,31 @@
   .tabs button.on{background:#fff;color:#2C2C2B;box-shadow:0 1px 2px rgba(0,0,0,.08)}
   .tabs button:focus-visible{outline:2px solid #2783DE;outline-offset:2px}
   .pane[hidden]{display:none}
+  .shelfcard{padding:clamp(12px,4.4cqw,18px)}
+  .shhd{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .shttl{font-size:clamp(10px,3.6cqw,12px);font-weight:600;letter-spacing:.18em;color:#2C2C2B}
+  .shsub{font-size:clamp(9.5px,3.2cqw,11px);color:#7D7A75;font-variant-numeric:tabular-nums}
+  .shstat{display:flex;gap:6px;margin:11px 0 4px}
+  .shstat>div{flex:1 1 0;min-width:0;background:#F5F4F2;border-radius:8px;padding:7px 4px;text-align:center}
+  .shstat b{display:block;font-size:clamp(13px,5cqw,17px);font-weight:600;font-variant-numeric:tabular-nums;color:#2C2C2B}
+  .shstat span{font-size:clamp(7px,2.6cqw,8.5px);letter-spacing:.14em;color:#A6A29C}
+  .shbody{max-height:392px;overflow-y:auto;margin-top:8px}
+  .shday{margin-top:12px}
+  .shdate{display:flex;align-items:baseline;justify-content:space-between;
+    font-size:clamp(8.5px,2.9cqw,10px);letter-spacing:.1em;color:#A6A29C;
+    padding-bottom:5px;border-bottom:1px solid #F0EFED;font-variant-numeric:tabular-nums}
+  .shrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:7px 5px;padding:10px 0 2px}
+  .shcup{position:relative;width:100%;padding-top:150%;cursor:default}
+  .shcup i{position:absolute;left:9%;right:9%;top:9%;bottom:19%;
+    clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);
+    background:linear-gradient(180deg,var(--a),var(--b) 62%,var(--c));
+    box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
+  .shcup u{position:absolute;left:2%;right:2%;top:0;height:9%;border-radius:3px;
+    background:linear-gradient(180deg,#F2F1EF,#DDDAD5);text-decoration:none;
+    box-shadow:inset 0 0 0 .5px rgba(0,0,0,.1)}
+  .shcup em{position:absolute;left:0;right:0;bottom:1%;text-align:center;font-style:normal;
+    font-size:clamp(6px,2.2cqw,7.5px);font-weight:600;letter-spacing:.04em;color:#7D7A75}
+  .shempty{margin-top:16px;font-size:clamp(9.5px,3.2cqw,11px);color:#A6A29C;line-height:1.7}
 
   .card{background:#fff;border:1px solid #E6E5E3;border-radius:10px}
 
@@ -47,6 +72,15 @@
   .liq{position:absolute;left:0;right:0;bottom:4.62%;height:0;
     background:linear-gradient(to bottom,var(--c0),var(--c1) 38%,var(--c2) 76%,var(--c3));
     transition:height .5s ease}
+  /* the drink surface reads as an ellipse from the front */
+  .liq::before{content:"";position:absolute;left:0;right:0;top:-2.6cqw;height:5.2cqw;
+    border-radius:50%;background:var(--c1);
+    box-shadow:inset 0 .7cqw 1.2cqw rgba(255,255,255,.30),inset 0 -.5cqw .8cqw rgba(0,0,0,.16)}
+  /* cylinder volume: dark at both walls, light through the middle */
+  .liq::after{content:"";position:absolute;left:0;right:0;top:-2.6cqw;bottom:0;
+    mix-blend-mode:multiply;pointer-events:none;
+    background:linear-gradient(90deg,#8B8177 0%,#B4ADA4 7%,#EFEBE6 22%,#FFFFFF 36%,
+      #F6F2ED 52%,#DCD5CC 74%,#A79E94 92%,#867C72 100%)}
   .liqtop{opacity:0;mix-blend-mode:multiply;transition:opacity .3s ease}
   .cupimg{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
   .lbl{left:29.0%;top:30.8%;width:40.3%;height:57.2%;right:auto;bottom:auto;
@@ -248,6 +282,7 @@
     <div class="tabs">
       <button type="button" id="tabMenu" class="on">メニュー</button>
       <button type="button" id="tabReceipt">レシート</button>
+      <button type="button" id="tabShelf">コレクション</button>
     </div>
 
     <div class="pane" id="paneReceipt" hidden>
@@ -285,6 +320,21 @@
         <div class="rcalgrid" id="calGrid"></div>
         <div class="rtip" id="calTip" hidden></div>
       </div>
+    </div>
+    </div>
+
+    <div class="pane" id="paneShelf" hidden>
+    <div class="card shelfcard">
+      <div class="shhd">
+        <p class="shttl">COLLECTION</p>
+        <p class="shsub" id="shSub">0 cups</p>
+      </div>
+      <div class="shstat">
+        <div><b id="shToday">0</b><span>TODAY</span></div>
+        <div><b id="shWeek">0</b><span>WEEK</span></div>
+        <div><b id="shAll">0</b><span>ALL</span></div>
+      </div>
+      <div class="shbody" id="shBody"></div>
     </div>
     </div>
 
@@ -329,17 +379,17 @@
      op:0, dot:"#4A2F1B",
      c:["#3E2717","#4A2F1B","#57381F","#6A4529"]},
     {id:"latte",    jp:"ラテ",          lb:"Iced Latte.",       en:"ICED LATTE", l1:"ICED", l2:"LATTE",
-     op:.94, dot:"#A87A54",
-     c:["#6E4C33","#A87A54","#D9C2A6","#F3EADD"]},
+     op:1, dot:"#A87A54",
+     c:["#6B4324","#9A6B45","#BE9068","#D6B48B"]},
     {id:"mocha",    jp:"カフェモカ",  lb:"Iced Mocha.",       en:"ICED MOCHA", l1:"ICED", l2:"MOCHA",
-     op:.94, dot:"#7A543A",
-     c:["#4A2C1B","#7A543A","#C9B396","#F5F1E5"]},
+     op:1, dot:"#7A543A",
+     c:["#3B2114","#68432A","#94684A","#B98F6A"]},
     {id:"suika",    jp:"スイカジュース",lb:"Watermelon Juice.",en:"WATERMELON", l1:"WATER", l2:"MELON",
-     op:.94, dot:"#EA6470",
-     c:["#E04C5C","#EC6D73","#F19A94","#F5BCB0"]},
+     op:1, dot:"#EA6470",
+     c:["#D6394C","#E2515D","#EA7A76","#F09C8E"]},
     {id:"matcha",   jp:"抹茶ラテ",     lb:"Iced Matcha Latte.",en:"ICED MATCHA", l1:"MATCHA", l2:"LATTE",
-     op:.94, dot:"#7FA544",
-     c:["#4E7A2C","#7FA544","#C1D79B","#EFEADB"]}
+     op:1, dot:"#7FA544",
+     c:["#43701F","#6C9438","#95B45E","#BCCE8B"]}
   ];
   function drinkById(id){for(var i=0;i<DRINKS.length;i++){if(DRINKS[i].id===id)return DRINKS[i];}return DRINKS[0];}
 
@@ -361,7 +411,7 @@
   var FULL=1800;
   var K={cup:"cafe_cup",drink:"cafe_drink",size:"cafe_size",tab:"cafe_tab",album:"cafe_album",today:"cafe_today",day:"cafe_day",
          week:"cafe_week",wk:"cafe_wk",month:"cafe_month",mk:"cafe_mk",cups:"cafe_cups",listen:"cafe_listen",
-         cupby:"cafe_cupby",hist:"cafe_hist"};
+         cupby:"cafe_cupby",hist:"cafe_hist",shelf:"cafe_shelf"};
 
   var lsOk=true;
   try{localStorage.setItem("__p__","1");localStorage.removeItem("__p__");}catch(e){lsOk=false;}
@@ -378,11 +428,13 @@
   var st={cup:parseFloat(g(K.cup,"0"))||0,drink:g(K.drink,"latte"),size:g(K.size,"M"),album:g(K.album,"recipe"),
           today:parseFloat(g(K.today,"0"))||0,day:g(K.day,dayKey()),
           week:parseInt(g(K.week,"0"),10)||0,wk:g(K.wk,weekKey()),
-          month:parseInt(g(K.month,"0"),10)||0,mk:g(K.mk,monthKey()),cups:[],listen:{},cupBy:{},hist:{}};
+          month:parseInt(g(K.month,"0"),10)||0,mk:g(K.mk,monthKey()),cups:[],listen:{},cupBy:{},hist:{},shelf:[]};
   try{st.cups=JSON.parse(g(K.cups,"[]"))||[];}catch(e){st.cups=[];}
   try{st.listen=JSON.parse(g(K.listen,"{}"))||{};}catch(e){st.listen={};}
   try{st.cupBy=JSON.parse(g(K.cupby,"{}"))||{};}catch(e){st.cupBy={};}
   try{st.hist=JSON.parse(g(K.hist,"{}"))||{};}catch(e){st.hist={};}
+  try{st.shelf=JSON.parse(g(K.shelf,"[]"))||[];}catch(e){st.shelf=[];}
+  function saveShelf(){s(K.shelf,JSON.stringify(st.shelf));}
   function saveCupBy(){st.cupBy[st.drink]=st.cup;s(K.cupby,JSON.stringify(st.cupBy));}
   function saveHist(){s(K.hist,JSON.stringify(st.hist));}
   function histDay(k){if(!st.hist[k])st.hist[k]={s:0,c:{}};return st.hist[k];}
@@ -415,6 +467,13 @@
       for(var j=0;j<m;j++){var v=140+((j*97)%260);st.listen[lkey(TRACKS[j])]=v;tot+=v;}
       st.today=tot;}
     if(fv!==null)st.cup=FULL*fv;
+    var sh=q.match(/shelf=(\d+)/);
+    if(sh){st.shelf=[];var sn=parseInt(sh[1],10),now=Date.now();
+      for(var k2=0;k2<sn;k2++){
+        st.shelf.push({d:DRINKS[k2%DRINKS.length].id,z:SIZES[k2%SIZES.length].id,
+                       t:now-(k2%4)*86400000-k2*3600000});
+      }
+    }
     if(q.indexOf("hist=1")>=0){
       st.hist={};
       var nd=new Date(),mm=nd.getMonth(),yy=nd.getFullYear();
@@ -497,7 +556,9 @@
     var r=Math.min(st.cup/FULL,1);
     L.style.height=(LIQ_SPAN*r)+"%";
     if(L2)L2.style.height=(LIQ_SPAN*r)+"%";
-    if(W){W.style.height=(LIQ_SPAN*r)+"%";W.style.opacity=String(d.op||0);}
+    if(W){W.style.height=(LIQ_SPAN*r)+"%";W.style.opacity=String(r>0?(d.op||0):0);}
+    L.style.opacity=r>0?"1":"0";
+    if(L2)L2.style.opacity=r>0?"1":"0";
     if($("liqtop"))$("liqtop").style.opacity=String(d.tint||0);
     $("pct").textContent=Math.round(r*100)+"%";
     var z=size();
@@ -687,8 +748,62 @@
     });
   }
 
+  function shelfDayKey(ms){var d=new Date(ms);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+
+  function renderShelf(){
+    var body=$("shBody");if(!body)return;
+    body.innerHTML="";
+    var today=dayKey(),wkStart=new Date();wkStart.setDate(wkStart.getDate()-((wkStart.getDay()+6)%7));
+    wkStart.setHours(0,0,0,0);
+    var nToday=0,nWeek=0;
+    var days={},order=[];
+    st.shelf.forEach(function(c){
+      var k=shelfDayKey(c.t);
+      if(!days[k]){days[k]=[];order.push(k);}
+      days[k].push(c);
+      if(k===today)nToday++;
+      if(c.t>=wkStart.getTime())nWeek++;
+    });
+    $("shToday").textContent=String(nToday);
+    $("shWeek").textContent=String(nWeek);
+    $("shAll").textContent=String(st.shelf.length);
+    $("shSub").textContent=st.shelf.length+" cups";
+    if(!st.shelf.length){
+      var e=document.createElement("p");e.className="shempty";
+      e.textContent="まだ1杯もありません。再生して1杯完成させると、ここに並びます。";
+      body.appendChild(e);return;
+    }
+    order.sort().reverse();
+    order.forEach(function(k){
+      var wrap=document.createElement("div");wrap.className="shday";
+      var hd=document.createElement("div");hd.className="shdate";
+      var l=document.createElement("span");l.textContent=k+(k===today?"  TODAY":"");
+      var r=document.createElement("span");r.textContent=days[k].length+" cups";
+      hd.appendChild(l);hd.appendChild(r);wrap.appendChild(hd);
+      var row=document.createElement("div");row.className="shrow";
+      days[k].slice().reverse().forEach(function(c){
+        var d=drinkById(c.d);
+        var cell=document.createElement("div");cell.className="shcup";
+        var tm=new Date(c.t);
+        cell.title=d.jp+" / "+c.z+" / "+pad(tm.getHours())+":"+pad(tm.getMinutes());
+        var body2=document.createElement("i");
+        body2.style.setProperty("--a",d.c[1]);
+        body2.style.setProperty("--b",d.c[2]);
+        body2.style.setProperty("--c",d.c[3]);
+        var lid=document.createElement("u");
+        var lb=document.createElement("em");lb.textContent=c.z;
+        cell.appendChild(body2);cell.appendChild(lid);cell.appendChild(lb);
+        row.appendChild(cell);
+      });
+      wrap.appendChild(row);body.appendChild(wrap);
+    });
+  }
+
   function serveCup(){
     st.cups.push(drink().en+" "+size().id);
+    st.shelf.push({d:st.drink,z:st.size,t:Date.now()});
+    if(st.shelf.length>600)st.shelf=st.shelf.slice(-600);
+    saveShelf();renderShelf();
     st.week+=1;st.month+=1;st.cup=0;
     var h=histDay(dayKey());h.c[st.drink]=(h.c[st.drink]||0)+1;saveHist();
     s(K.cups,JSON.stringify(st.cups));s(K.week,st.week);s(K.month,st.month);s(K.cup,0);
@@ -784,10 +899,12 @@
   $("next").addEventListener("click",function(){cur=(cur+1)%TRACKS.length;start();});
   $("prev").addEventListener("click",function(){cur=(cur<=0?TRACKS.length:cur)-1;start();});
 
-  function redrawAll(){renderCup();renderReceipt();renderBarcode();renderAlbums();renderList();renderPlayer();}
+  function redrawAll(){renderCup();renderReceipt();renderBarcode();renderAlbums();renderList();renderPlayer();renderShelf();}
 
   function resetToday(){
     st.cup=0;st.today=0;st.cups=[];st.listen={};st.cupBy={};
+    var tk=dayKey();
+    st.shelf=st.shelf.filter(function(c){return shelfDayKey(c.t)!==tk;});saveShelf();
     delete st.hist[dayKey()];
     s(K.cup,0);s(K.today,0);s(K.cups,"[]");s(K.listen,"{}");s(K.cupby,"{}");saveHist();
   }
@@ -806,17 +923,21 @@
   $("rsAll").addEventListener("click",function(){
     if(!window.confirm("すべての記録を消します。よろしいですか？"))return;
     stop();resetToday();st.week=0;st.month=0;cur=-1;st.hist={};saveHist();
+    st.shelf=[];saveShelf();
     s(K.week,0);s(K.month,0);
     redrawAll();
   });
 
   function showTab(which){
-    var isMenu=which==="menu";
-    $("paneMenu").hidden=!isMenu;
-    $("paneReceipt").hidden=isMenu;
-    $("tabMenu").className=isMenu?"on":"";
-    $("tabReceipt").className=isMenu?"":"on";
-    s(K.tab,which);
+    var w=(which==="receipt"||which==="shelf")?which:"menu";
+    $("paneMenu").hidden=w!=="menu";
+    $("paneReceipt").hidden=w!=="receipt";
+    $("paneShelf").hidden=w!=="shelf";
+    $("tabMenu").className=w==="menu"?"on":"";
+    $("tabReceipt").className=w==="receipt"?"on":"";
+    $("tabShelf").className=w==="shelf"?"on":"";
+    if(w==="shelf")renderShelf();
+    s(K.tab,w);
   }
   $("calPrev").addEventListener("click",function(){
     calM=calM-1;if(calM<0){calM=11;calY=calY-1;}renderCalendar();
@@ -826,9 +947,10 @@
   });
   $("tabMenu").addEventListener("click",function(){showTab("menu");});
   $("tabReceipt").addEventListener("click",function(){showTab("receipt");});
-  showTab(g(K.tab,"menu")==="receipt"?"receipt":"menu");
+  $("tabShelf").addEventListener("click",function(){showTab("shelf");});
+  showTab(g(K.tab,"menu"));
 
-  renderMenu();bindMenu();renderCup();renderReceipt();renderBarcode();renderAlbums();renderList();renderPlayer();
+  renderMenu();bindMenu();renderCup();renderReceipt();renderBarcode();renderAlbums();renderList();renderPlayer();renderShelf();
 })();
 </script>
 </body>
