@@ -6,7 +6,7 @@
 <title>mp3.cafe</title>
 <style>
   *{box-sizing:border-box}
- .barcode i{height:44px !important}
+  html{scrollbar-gutter:stable}
   html,body{margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
     font-size:15px;line-height:1.5;color:#2C2C2B;background:#EFEDEA}
@@ -284,7 +284,7 @@
     <div class="tabs">
       <button type="button" id="tabMenu" class="on">メニュー</button>
       <button type="button" id="tabReceipt">レシート</button>
-      <button type="button" id="tabShelf">コレクション</button>
+      <button type="button" id="tabShelf">オーダー</button>
     </div>
 
     <div class="pane" id="paneReceipt" hidden>
@@ -328,7 +328,7 @@
     <div class="pane" id="paneShelf" hidden>
     <div class="card shelfcard">
       <div class="shhd">
-        <p class="shttl">COLLECTION</p>
+        <p class="shttl">ORDERS</p>
         <p class="shsub" id="shSub">0 cups</p>
       </div>
       <div class="shstat">
@@ -707,7 +707,7 @@
       seed=(seed*1103515245+12345)&0x7fffffff;
       var b=document.createElement("i");
       b.style.width=(1.5+(seed>>3)%3)+"px";
-      b.style.height=(32+(seed>>7)%14)+"px";
+      b.style.height="38px";
       bc.appendChild(b);
     }
     var n=String(100000+((st.week*7919+st.cups.length*104729)%899999));
