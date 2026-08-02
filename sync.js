@@ -1,86 +1,75 @@
 /* korean-audio cross-device progress sync (single user) */
 (function () {
-  var API = "/api/progress";
-  var PREFIX = "cafe_";
-  var TS_KEY = "cafe_sync_ts";
-  var APPLIED = "__ka_sync_applied";
-  var SAVE_DEBOUNCE = 1500;
+    var API = "/api/progress";
+    var PREFIX = "cafe_";
+    var TS_KEY = "cafe_sync_ts";
+    var APPLIED = "__ka_sync_applied";
+    var SAVE_DEBOUNCE = 1500;
 
-  var rawSet = localStorage.setItem;
+   var rawSet = localStorage.setItem.bind(localStorage);
 
-  function collect() {
-    var out = {};
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf(PREFIX) === 0 && k !== TS_KEY) {
-        out[k] = localStorage.getItem(k);
-      }
+   function collect() {
+         var out = {};
+         for (var i = 0; i < localStorage.length; i++) {
+                 var k = localStorage.key(i);
+                 if (k && k.indexOf(PREFIX) === 0 && k !== TS_KEY) {
+                           out[k] = localStorage.getItem(k);
+                 }
+         }
+         return out;
+   }
+
+   var saveTimer = null;
+    function scheduleSave() {
+          if (saveTimer) clearTimeout(saveTimer);
+          saveTimer = setTimeout(doSave, SAVE_DEBOUNCE);
     }
-    return out;
-  }
 
-  function apply(data) {
-    if (!data) return false;
-    var changed = false;
-    Object.keys(data).forEach(function (k) {
-      if (k.indexOf(PREFIX) !== 0) return;
-      if (localStorage.getItem(k) !== data[k]) {
-        rawSet.call(localStorage, k, data[k]);
-        changed = true;
-      }
-    });
-    return changed;
-  }
+   function doSave() {
+         saveTimer = null;
+         var ts = Date.now();
+         var payload = { ts: ts, keys: collect() };
+         try { rawSet(TS_KEY, String(ts)); } catch (e) {}
+         fetch(API, {
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify(payload),
+                 keepalive: true
+         }).catch(function () {});
+   }
 
-  var saveTimer = null;
-  function scheduleSave() {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(save, SAVE_DEBOUNCE);
-  }
+   // Hook writes to cafe_* keys -> schedule a save
+   localStorage.setItem = function (k, v) {
+         rawSet(k, v);
+         if (k && k.indexOf(PREFIX) === 0 && k !== TS_KEY) scheduleSave();
+   };
 
-  function save() {
-    var payload = { ts: Date.now(), keys: collect() };
-    rawSet.call(localStorage, TS_KEY, String(payload.ts));
-    fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true
-    }).catch(function () {});
-  }
+   window.addEventListener("visibilitychange", function () {
+         if (document.visibilityState === "hidden" && saveTimer) doSave();
+   });
 
-  localStorage.setItem = function (k, v) {
-    rawSet.apply(this, arguments);
-    if (typeof k === "string" && k.indexOf(PREFIX) === 0 && k !== TS_KEY) {
-      scheduleSave();
-    }
-  };
-
-  function init() {
-    fetch(API, { cache: "no-store" })
+   // Initial load: pull from server, restore if server is newer, reload once.
+   fetch(API, { cache: "no-store" })
       .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (!res || !res.ok) return;
-        var remote = res.data;
-        if (!remote || !remote.keys) return;
-        var localTs = parseInt(localStorage.getItem(TS_KEY) || "0", 10);
-        var remoteTs = remote.ts || 0;
-        var localHasData = Object.keys(collect()).length > 0;
-        if (remoteTs > localTs || !localHasData) {
-          var changed = apply(remote.keys);
-          rawSet.call(localStorage, TS_KEY, String(remoteTs || Date.now()));
-          if (changed && !sessionStorage.getItem(APPLIED)) {
-            sessionStorage.setItem(APPLIED, "1");
-            location.reload();
-          }
-        }
+      .then(function (j) {
+              var data = j && j.data;
+              if (!data || !data.keys) return;
+              var serverTs = Number(data.ts) || 0;
+              var localTs = Number(localStorage.getItem(TS_KEY)) || 0;
+              var localEmpty = Object.keys(collect()).length === 0;
+              var alreadyApplied = sessionStorage.getItem(APPLIED) === String(serverTs);
+              if (alreadyApplied) return;
+              if (serverTs > localTs || localEmpty) {
+                        var keys = data.keys;
+                        for (var k in keys) {
+                                    if (Object.prototype.hasOwnProperty.call(keys, k)) rawSet(k, keys[k]);
+                        }
+                        rawSet(TS_KEY, String(serverTs));
+                        sessionStorage.setItem(APPLIED, String(serverTs));
+                        location.reload();
+              } else {
+                        sessionStorage.setItem(APPLIED, String(serverTs));
+              }
       })
       .catch(function () {});
-  }
-
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") save();
-  });
-
-  init();
 })();
